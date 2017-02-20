@@ -4,6 +4,7 @@ type ParseAtom is ( String val
                   | Array[ParseResult val] val
                   | Expression val
                   | Rule val
+                  | Any val
                   | None)
 
 
@@ -33,16 +34,14 @@ class ParseResult
   fun rule(): Rule val ? =>
     _atom as Rule val
 
-  fun flatten(): ParseResult val =>
+  fun flatten(): ParseResult val ? =>
     try
       ParseResult(string())
     else
       var result = ""
-      try
-        let arr = array()
-        for r in arr.values() do
-          result = result.add(r.flatten().string())
-        end
+      let arr = array()
+      for r in arr.values() do
+        result = result.add(r.flatten().string())
       end
       ParseResult(result)
     end

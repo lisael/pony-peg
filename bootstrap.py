@@ -607,9 +607,9 @@ rule "RULE" <- name:identifier_name __  ( :alias _ )? "<-" __ expr:expression co
 }
 
 code_block "CODE_BLOCK" <- "{" :code "}" {@code}
-code <- ( ( ![{}] source_char )+ / ( "\\{" code "\\}" ) )* {if true then value'.flatten() else error end}
+code <- ( ( ![{}] source_char )+ / ( "\\{" code "\\}" ) )* {value'.flatten()}
 
-alias "ALIAS" <- string_literal {if true then value'.flatten() else error end}
+alias "ALIAS" <- string_literal {value'.flatten()}
 
 expression "EXPRESSION" <- choice_expr
 choice_expr <- first:seq_expr rest:( __ "/" __ seq_expr )*
@@ -649,7 +649,7 @@ comment <- "#" ( !EOL source_char )*
 
 source_char <- .
 identifier <- identifier_name
-identifier_name <- identifier_start identifier_part* {if true then value'.flatten() else error end}
+identifier_name <- identifier_start identifier_part* {value'.flatten()}
 identifier_start <- [A-Za-z_]
 identifier_part <- identifier_start / [0-9]
 
