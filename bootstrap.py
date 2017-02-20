@@ -276,7 +276,7 @@ class Rule:
         return self._labels
 
     def pony_labels(self):
-        return ", ".join(["value: ParseResult val"] +
+        return ", ".join(["value': ParseResult val"] +
             ["%s': ParseResult val" % l for l in set(self.find_labels(self.expr))])
 
     def pony_action_fun_name(self):
@@ -292,7 +292,7 @@ class Rule:
 
     def pony_code(self):
         if not self.code.strip():
-            return "if true then value else error end"
+            return "if true then value' else error end"
         elif self.code.strip().startswith("@"):
             return "if true then %s else error end" % (self.code.strip()[1:] + "'")
         else:
@@ -591,15 +591,13 @@ class PegParser
     _env=env
     _sr = SourceReader(src)
 
-  fun p_flatten(value: ParseResult val): ParseResult val ? =>
-    if true then ParseResult("") else error end
 }
 
 grammar <- intro:code_block __ "{" __ rules:( rule __ )+ __ "}" {
     for r in rules'.array().values() do
-      _env.out.write(r.rule().string())
+        _env.out.write(r.rule().string())
     end
-    value
+    value'
 }
 
 rule "RULE" <- name:identifier_name __  ( :alias _ )? "<-" __ expr:expression code:( __ code_block )? EOS {
@@ -609,9 +607,9 @@ rule "RULE" <- name:identifier_name __  ( :alias _ )? "<-" __ expr:expression co
 }
 
 code_block "CODE_BLOCK" <- "{" :code "}" {@code}
-code <- ( ( ![{}] source_char )+ / ( "\\{" code "\\}" ) )* {p_flatten(value)}
+code <- ( ( ![{}] source_char )+ / ( "\\{" code "\\}" ) )* {if true then value'.flatten() else error end}
 
-alias "ALIAS" <- string_literal {p_flatten(value)}
+alias "ALIAS" <- string_literal {if true then value'.flatten() else error end}
 
 expression "EXPRESSION" <- choice_expr
 choice_expr <- first:seq_expr rest:( __ "/" __ seq_expr )*
@@ -651,7 +649,7 @@ comment <- "#" ( !EOL source_char )*
 
 source_char <- .
 identifier <- identifier_name
-identifier_name <- identifier_start identifier_part* {p_flatten(value)}
+identifier_name <- identifier_start identifier_part* {if true then value'.flatten() else error end}
 identifier_start <- [A-Za-z_]
 identifier_part <- identifier_start / [0-9]
 
