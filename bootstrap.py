@@ -282,11 +282,11 @@ class Rule:
     def pony_action_fun_name(self):
         return "_on_%s" % ponyfy_funname(self.name)
 
-    def pony_extract_labels(self):
-        result = "%s(value" % self.pony_action_fun_name()
+    def pony_call_rule_code(self):
+        result = "%s(p_value" % self.pony_action_fun_name()
         if self.labels:
             result += ", "
-            result += ", ".join(['value("%s")' % l for l in self.labels])
+            result += ", ".join(['_current_labeled("%s")' % l for l in self.labels])
         result += ")"
         return result
 
@@ -301,10 +301,12 @@ class Rule:
     def __str__(self):
         return """
   fun ref {0}(): ParseResult val ? =>
-    let result = {1}()
-    let labels: Array[String] = {6}
-    let value = ParseResult(result where labels=Labels(labels))
-    {5}
+    let p_old_labeled = _current_labeled = Map[String, ParseResult val]
+    var p_value = {1}()
+    p_value = {5}
+    _current_labeled = p_old_labeled
+    p_value
+    
 
   fun ref _on_{0}({3}): ParseResult val ? =>
     {4}
@@ -314,8 +316,7 @@ class Rule:
                self.alias,
                self.pony_labels(),
                self.pony_code(),
-               self.pony_extract_labels(),
-               "[" + ", ".join('"%s"' % l for l in self.labels) + "]" if self.labels else "Array[String]"
+               self.pony_call_rule_code(),
               )
 
 
@@ -434,7 +435,8 @@ class LabeledExpr(Expression):
     def __str__(self):
         return """
   fun ref {0}(): ParseResult val ? =>
-    ParseResult({2}() where label'="{1}")
+    let p_result = {2}()
+    _current_labeled.insert("{1}", p_result)
     """.format(
            self.name,
            self.label,
@@ -581,7 +583,7 @@ use "collections"
 
 
 class PegParser
-  let _rules: Map[String, Rule] = Map[String, Rule]
+  var _current_labeled: Map[String, ParseResult val] = Map[String, ParseResult val]
   let _env: Env
   let _sr: SourceReader
 
