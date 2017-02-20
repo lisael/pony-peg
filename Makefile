@@ -56,9 +56,25 @@ doc: $(PONY_SRC) ## Build the documentation
 
 clean: ## Remove all artifacts
 	-rm -rf $(BUILD_DIR)
+	-rm -rf venv
 
 
 .PHONY: help
 
 help: ## Show help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+venv:
+	virtualenv --python /usr/bin/python2 venv
+	venv/bin/pip install fastidious
+
+peg/parser.pony: venv bootstrap.py ## bootstrap the the peg parser
+	venv/bin/python bootstrap.py > peg/parser.pony
+
+build/bin:
+	mkdir -p build/bin
+
+build/bin/pony-peg-generate: peg/parser.pony build/bin $(PONY_SRC)
+	ponyc -p . peg/pony-peg-generate -o build/bin/
+
+generator: build/bin/pony-peg-generate
