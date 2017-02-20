@@ -590,7 +590,6 @@ class PegParser
   new create(env: Env, src: String) =>
     _env=env
     _sr = SourceReader(src)
-    _env.out.write("Hello\n")
 
   fun p_flatten(value: ParseResult val): ParseResult val ? =>
     if true then ParseResult("") else error end

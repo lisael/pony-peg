@@ -32,3 +32,17 @@ class ParseResult
 
   fun rule(): Rule val ? =>
     _atom as Rule val
+
+  fun flatten(): ParseResult val =>
+    try
+      ParseResult(string())
+    else
+      var result = ""
+      try
+        let arr = array()
+        for r in arr.values() do
+          result = result.add(r.flatten().string())
+        end
+      end
+      ParseResult(result)
+    end
