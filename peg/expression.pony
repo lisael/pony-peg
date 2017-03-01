@@ -193,17 +193,20 @@ class val ChoiceExpr is Expression
 
   fun pony_method(): String =>
     _pony_method() +
+    "    let p_sp = _sr.save()\n" +
     "    try\n" +
     "      let p_result = " + _first.pony_func_name() + "()\n" +
     "      " + pony_dedent() + "\n" +
     "      p_result\n"+
     "    else\n" +
+    "      _sr.restore(p_sp)\n" +
     "      try\n" +
     "        let p_result_2 = " + _rest.pony_func_name() + "()\n" +
     "        " + pony_dedent() + "\n" +
     "        p_result_2\n" +
     "      else\n" +
     "        " + pony_dedent() + "\n" +
+    "        _sr.restore(p_sp)\n" +
     "        error\n" +
     "      end\n" +
     "    end\n"
@@ -246,7 +249,12 @@ class val ZeroOrMoreExpr is Expression
     "zero_or_more_expr_" + _rank.string()
 
   fun pony_grammar(): String =>
-    _expr.pony_grammar() + "*"
+    match _expr
+    | let e: (ChoiceExpr val|SeqExpr val) =>
+      "( " + _expr.pony_grammar() + " )*"
+    else
+      _expr.pony_grammar() + "*"
+    end
 
   fun labels(set: Set[String]): Set[String] =>
     _expr.labels(set)
@@ -283,7 +291,12 @@ class val OneOrMoreExpr is Expression
     "one_or_more_expr_" + _rank.string()
 
   fun pony_grammar(): String =>
-    _expr.pony_grammar() + "+"
+    match _expr
+    | let e: (ChoiceExpr val|SeqExpr val) =>
+      "( " + _expr.pony_grammar() + " )+"
+    else
+      _expr.pony_grammar() + "+"
+    end
 
   fun labels(set: Set[String]): Set[String] =>
     _expr.labels(set)
@@ -326,7 +339,12 @@ class val MaybeExpr is Expression
     "maybe_expr_" + _rank.string()
 
   fun pony_grammar(): String =>
-    _expr.pony_grammar() + "?"
+    match _expr
+    | let e: (ChoiceExpr val|SeqExpr val) =>
+      "( " + _expr.pony_grammar() + " )?"
+    else
+      _expr.pony_grammar() + "?"
+    end
 
   fun labels(set: Set[String]): Set[String] =>
     _expr.labels(set)
@@ -362,7 +380,12 @@ class val NotExpr is Expression
     "not_expr_" + _rank.string()
 
   fun pony_grammar(): String =>
-    "!" + _expr.pony_grammar()
+    match _expr
+    | let e: (ChoiceExpr val|SeqExpr val) =>
+      "!( " + _expr.pony_grammar() + " )"
+    else
+      "!" + _expr.pony_grammar()
+    end
 
   fun labels(set: Set[String]): Set[String] =>
     _expr.labels(set)
@@ -385,7 +408,6 @@ class val NotExpr is Expression
     "    error\n"
 
 class CharRangeExpr is Expression
-  // TODO: implement char classes (0-9a-z)
   // TODO: implement ignorecase
   let _text: String
   let _ignorecase: Bool

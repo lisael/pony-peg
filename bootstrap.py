@@ -463,17 +463,20 @@ class ChoiceExpr(Expression):
   fun ref {0}(): ParseResult val ? =>
     // {3}
     {4}
+    let p_sp = _sr.save()
     try
       let p_result = {1}()
       {5}
       p_result
     else
+      _sr.restore(p_sp)
       try
         let p_result_2 = {2}()
         {5}
         p_result_2
       else
         {5}
+        _sr.restore(p_sp)
         error
       end
     end
@@ -1097,7 +1100,14 @@ char_range_expr <- "[" content:( class_char_range / class_char )* "]" ignore:"i"
 }
 
 class_char_range <- start:class_char "-" end:class_char{
-    
+    match (start'.string(), end'.string())
+    | ("a", "z") => ParseResult("abcdefghijklmnopqrstuvwxyz")
+    | ("A", "Z") => ParseResult("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    | ("0", "9") => ParseResult("0123456789")
+    | ("1", "9") => ParseResult("123456789")
+    else
+      error
+    end
 }
 
 class_char <- ( !( "]" / "\\" / EOL ) char:source_char ) / ( "\\" char:char_class_escape ) {@char}
@@ -1117,6 +1127,7 @@ common_escape <- single_char_escape {
       error
     end
 }
+
 single_char_escape <- [abnfrtv\\]
 
 comment <- "#" ( !EOL source_char )*

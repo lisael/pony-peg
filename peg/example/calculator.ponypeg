@@ -17,6 +17,8 @@ actor Main
     _debug_indent = ""
     try 
       eval()
+    else:
+      _env.out.print("Can't parse input")
     end
       
 }
@@ -26,7 +28,7 @@ expr "EXPRESSION" <- _ first:term rest:( _ add_op _ term  )* _ {}
 add_op "OPERATOR" <- "+" / "-" {}
 mult_op "OPERATOR" <- "*" / "/" {}
 factor "EXPRESSION" <- ( "(" fact:expr ")" ) / fact:integer {@fact}
-integer "INT"<- "-"? [0123456789]+ {}
+integer "INT"<- "-"? [0-9]+ {}
 _ <- [ \n\t\r]* {}
 EOF <- !. {}
 {

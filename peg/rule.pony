@@ -85,9 +85,7 @@ class Rule is Expression
     "      " + pony_dedent() + "\n" +
     "      _p_current_labeled = p_old_labeled\n" +
     "      error\n" +
-    "
-    end\n\n" +
-
+    "    end\n\n" +
 
     "  fun ref _on_" + pony_func_name() + """ (""" + pony_labels() + """): ParseResult val ? =>
     ifdef debug then
