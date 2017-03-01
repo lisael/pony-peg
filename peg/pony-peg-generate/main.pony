@@ -1,7 +1,10 @@
-use "peg"
+use "assert"
+use "collections"
+use "files"
 use "logger"
 use "options"
-use "files"
+use "peg"
+
 
 actor Main
   let _env: Env
@@ -19,11 +22,46 @@ actor Main
     generate()
 
   be generate() =>
-    try 
-      let src = String.from_array(read_source())
-      _env.out.print("coucou")
-      _env.out.print(src)
-      PegParser(_env, src)
+    let src = try String.from_array(read_source())
+      else
+        ""
+      end
+    // try 
+      // let src = String.from_array(read_source())
+      // _env.out.print(src)
+    // else
+      // return
+    // end
+    let parser = PegParser(_env, src)
+    try
+      let result = parser.grammar()
+      let intro' = result.array()(0)
+      let rules' = result.array()(1)
+      let outro' = result.array()(2)
+      _env.out.print(intro'.string())
+      match rules'.atom()
+      | let n: None => Fact(false, "No Rules!")
+      else
+        None
+      end
+
+      let writer = object
+        let done: SetIs[Expression val] = SetIs[Expression val]
+        fun ref write(e: Expression val, env: Env) =>
+          if not done.contains(e) then
+            env.out.print(e.pony_method())
+            done.set(e)
+            for expr in e.requires().values() do
+              write(expr, env)
+            end
+          end
+      end
+
+      for r in rules'.array().values() do
+        writer.write(r.array()(0).atom() as Expression val, _env)
+      end
+    else
+      try Fact(false, parser.p_current_error) end
     end
 
   fun read_source(): Array[U8] val ?=>

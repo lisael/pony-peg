@@ -1,10 +1,12 @@
 use "collections"
+use "debug"
+
+interface Debugable
+  fun dbg(): String?
 
 type ParseAtom is ( String val
                   | Array[ParseResult val] val
-                  | Expression val
-                  | Rule val
-                  | Any val
+                  | Debugable val
                   | None)
 
 
@@ -28,20 +30,35 @@ class ParseResult
   fun array(): Array[ParseResult val] val? =>
     _atom as Array[ParseResult val] val
 
-  fun expr(): Expression val ? =>
-    _atom as Expression val
+  fun none(): None? =>
+    _atom as None
 
-  fun rule(): Rule val ? =>
-    _atom as Rule val
-
-  fun flatten(): ParseResult val ? =>
-    try
-      ParseResult(string())
-    else
+  fun val flatten(): ParseResult val ? =>
+    match _atom
+    | let s: String val => this
+    | None => ParseResult("")
+    | let arr: Array[ParseResult val] val =>
       var result = ""
-      let arr = array()
       for r in arr.values() do
         result = result.add(r.flatten().string())
       end
       ParseResult(result)
+    else
+      Debug("flatten ERROR")
+      error
+    end
+
+  fun dbg(): String? =>
+    match _atom
+    | let s: String val => "\"" + s + "\""
+    | None => "None"
+    | let arr: Array[ParseResult val] val =>
+      var result = "["
+      for r in arr.values() do
+        result = result + r.dbg() + ", "
+      end
+      result + "]"
+    | let d: Debugable val => d.dbg()
+    else
+      error
     end
