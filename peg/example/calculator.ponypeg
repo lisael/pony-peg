@@ -1,0 +1,33 @@
+{
+use "collections"
+use "debug"
+use "peg"
+
+
+actor Main
+  var _p_current_labeled: Map[String, ParseResult val] = Map[String, ParseResult val]
+  var p_current_error: String = ""
+  let _env: Env
+  let _sr: SourceReader
+  var _debug_indent: String = ""
+
+  new create(env: Env) =>
+    _env=env
+    _sr = SourceReader("1+3")
+    _debug_indent = ""
+    try 
+      eval()
+    end
+      
+}
+eval <- expr:expr EOF {@expr}
+term <- first:factor rest:( _ mult_op _ factor )* {on_expr}
+expr "EXPRESSION" <- _ first:term rest:( _ add_op _ term  )* _ {}
+add_op "OPERATOR" <- "+" / "-" {}
+mult_op "OPERATOR" <- "*" / "/" {}
+factor "EXPRESSION" <- ( "(" fact:expr ")" ) / fact:integer {@fact}
+integer "INT"<- "-"? [0123456789]+ {}
+_ <- [ \n\t\r]* {}
+EOF <- !. {}
+{
+}
