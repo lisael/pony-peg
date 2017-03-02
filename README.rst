@@ -34,34 +34,34 @@ the tail (last ``{...}`` code, empty here) is copied as-is.
       var p_current_error: String = ""
       let _sr: SourceReader
       var _debug_indent: String = ""
-    
+      
       // User's attributes
       let _env: Env
-    
+      
       new create(env: Env) =>
         _env=env
-let args = env.args.slice(1)
+        let args = env.args.slice(1)
         var src = ""
         for arg in args.values() do
           src = src + " " + arg
         end
-Debug(src)
-_sr = SourceReader(src)
+        Debug(src)
+        _sr = SourceReader(src)
         try 
-let result = eval()
-env.out.print(result.string())
+          let result = eval()
+          env.out.print(result.string())
         else
-_env.out.print("Can't parse input")
+          _env.out.print("Can't parse input")
         end
-    
+      
       fun accumulate(first': ParseResult val, rest': ParseResult val): ParseResult val? =>
         if rest'.flatten().string() == "" then
-return first'.flatten()
+          return first'.flatten()
         end
-var result = first'.string().i32()
+        var result = first'.string().i32()
         for r in rest'.array().values() do
-let op = r.array()(1).string()
-let second = r.array()(3).string().i32()
+          let op = r.array()(1).string()
+          let second = r.array()(3).string().i32()
           result = match op
           | "+" => result + second
           | "-" => result - second
@@ -71,7 +71,7 @@ let second = r.array()(3).string().i32()
             error
           end
         end
-ParseResult(result.string())
+        ParseResult(result.string())
     
     }
     eval <- expr:expr EOF {@expr}
