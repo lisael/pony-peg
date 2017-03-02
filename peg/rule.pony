@@ -53,7 +53,7 @@ class Rule is Expression
     else
       try
         if _code(0) == '@' then
-          _code.substring(ISize(1)) + "'"
+          "if true then " + _code.substring(ISize(1)) + "' else error end"
         else
           _code
         end
@@ -89,7 +89,7 @@ class Rule is Expression
 
     "  fun ref _on_" + pony_func_name() + """ (""" + pony_labels() + """): ParseResult val ? =>
     ifdef debug then
-      Debug(_debug_indent + "_on_""" + pony_func_name() + """")
+      Debug(_debug_indent + "_on_""" + pony_func_name() + """ `""" + PonyEscape(_code) + """`")
       Debug(_debug_indent + _sr.head())
     end
     """ + pony_code() + "\n"

@@ -729,6 +729,7 @@ class NotExpr(Expression):
       p_result
     else
       {4}
+      _sr.restore(sp)
       return ParseResult(None)
     end
     _sr.restore(sp)
@@ -955,13 +956,13 @@ grammar <- intro:code_block __ rules:( rule __ )+ outro:(code_block __)? {
 
 rule "RULE" <- name:identifier_name __  ( :alias _ )? "<-" __ expr:expression code:( __ code_block )? EOS {
     ParseResult(recover val
-        Rule(name'.string(), expr'.atom() as Expression val, try code'.string() else "" end, try alias'.string() else "" end)
+        Rule(name'.string(), expr'.atom() as Expression val, try code'.array()(1).string() else "" end, try alias'.string() else "" end)
     end)
 }
 
 code_block "CODE_BLOCK" <- "{" :code "}" {@code}
 
-code <- ( ( ![{}] source_char )+ / ( "{" code "}" ) )* {value'.flatten()}
+code <- ( ( ![{}] source_char )+ / ( "{" code "}" ) )* {Debug(value'.dbg());value'.flatten()}
 
 alias "ALIAS" <- string_literal {value'.flatten()}
 
@@ -980,7 +981,7 @@ choice_expr <- first:seq_expr rest:( __ "/" __ choice_expr )? {
       end)
     end
 }
-primary_expr <- regexp_expr / lit_expr / char_range_expr / any_char_expr / rule_expr / sub_expr
+primary_expr <- regexp_expr / lit_expr / char_range_expr / any_char_expr / sub_expr / rule_expr
 sub_expr <- "(" __ expr:expression __ ")" {@expr}
 
 regexp_expr <- "~" lit:string_literal flags:[iLmsux]*

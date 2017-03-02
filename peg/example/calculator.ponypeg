@@ -13,23 +13,50 @@ actor Main
 
   new create(env: Env) =>
     _env=env
-    _sr = SourceReader("1+3")
+    let args = env.args.slice(1)
+    var src = ""
+    for arg in args.values() do
+      src = src + " " + arg
+    end
+    Debug(src)
+    _sr = SourceReader(src)
     _debug_indent = ""
     try 
-      eval()
-    else:
+      let result = eval()
+      env.out.print(result.string())
+    else
       _env.out.print("Can't parse input")
     end
-      
+
+  fun accumulate(first': ParseResult val, rest': ParseResult val): ParseResult val? =>
+    if rest'.flatten().string() == "" then
+      return first'.flatten()
+    end
+    var result = first'.string().i32()
+    for r in rest'.array().values() do
+      let op = r.array()(1).string()
+      let second = r.array()(3).string().i32()
+      result = match op
+      | "+" => result + second
+      | "-" => result - second
+      | "*" => result * second
+      | "/" => result / second
+      else
+        error
+      end
+    end
+    ParseResult(result.string())
+
 }
 eval <- expr:expr EOF {@expr}
-term <- first:factor rest:( _ mult_op _ factor )* {on_expr}
-expr "EXPRESSION" <- _ first:term rest:( _ add_op _ term  )* _ {}
+term <- first:factor rest:( _ mult_op _ factor )* {accumulate(first', rest')}
+expr "EXPRESSION" <- _ first:term rest:( _ add_op _ term  )* _ {accumulate(first', rest')}
 add_op "OPERATOR" <- "+" / "-" {}
 mult_op "OPERATOR" <- "*" / "/" {}
+close <- ")"
 factor "EXPRESSION" <- ( "(" fact:expr ")" ) / fact:integer {@fact}
-integer "INT"<- "-"? [0-9]+ {}
-_ <- [ \n\t\r]* {}
+integer "INT"<- "-"? [0-9]+ {value'.flatten()}
+_ <- [ \n\t\r]* {value'.flatten()}
 EOF <- !. {}
 {
 }

@@ -2,7 +2,7 @@ use "collections"
 
 interface Expression
   fun string(): String => ""
-  fun dbg(): String => "Expression"
+  fun dbg(): String => "Expression `" + pony_grammar() + "`"
 
   fun pony_method(): String =>
     _pony_method() +
@@ -176,7 +176,17 @@ class val ChoiceExpr is Expression
     "choice_expr_" + _rank.string()
 
   fun pony_grammar(): String =>
-    _first.pony_grammar() + " / " + _rest.pony_grammar()
+    match _first
+    | let e: (ChoiceExpr val|SeqExpr val) =>
+      "( " + _first.pony_grammar() + " )"
+    else
+      _first.pony_grammar()
+    end + " / " + match _rest
+    | let e: SeqExpr =>
+      "( " + _rest.pony_grammar() + " )"
+    else
+      _rest.pony_grammar()
+    end
 
   fun requires(): Array[Expression val] val =>
     recover val
@@ -402,6 +412,7 @@ class val NotExpr is Expression
     "      p_result\n" +
     "    else\n" +
     "      " + pony_dedent() + "\n" +
+    "      _sr.restore(sp)\n" +
     "      return ParseResult(None)\n" +
     "    end\n" +
     "    _sr.restore(sp)\n" +
