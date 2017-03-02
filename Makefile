@@ -1,11 +1,11 @@
 PKG=peg
 BUILD_DIR=build
-PONYC=/home/lisael/projects/perso/ponyc/build/release/ponyc
-PONY_SRC=$(shell find . -name "*.pony")
+PONYC=ponyc
+PONY_SRC_BASE=$(shell find . -name "*.pony" | grep -v ./peg/parser.pony)
 BIN_DIR=$(BUILD_DIR)/release
-BIN=$(BIN_DIR)/example
+BIN=$(BIN_DIR)/ponypeg-gen
 DEBUG_DIR=$(BUILD_DIR)/debug
-DEBUG=$(DEBUG_DIR)/example
+DEBUG=$(DEBUG_DIR)/ponypeg-gen
 TEST_SRC=$(PKG)/test
 TEST_BIN=$(BUILD_DIR)/test
 BENCH_SRC=$(PKG)/bench
@@ -13,8 +13,9 @@ BENCH_BIN=$(BUILD_DIR)/bench
 GENERATOR_SRC=peg/pony-peg-generate/
 GENERATOR_BIN=$(BIN_DIR)/pony-peg-generate
 GENERATOR_OUTPUT_DIR=$(BUILD_DIR)/src
-EXAMPLE_DIR=peg/example/
+EXAMPLE_DIR=peg/example
 PARSER_SRC=peg/parser.pony
+PYTHON2=/usr/bin/python2
 prefix=/usr/local
 
 all: $(BIN_DIR) test $(BIN) ## Run tests and build the package
@@ -27,7 +28,7 @@ debug: $(DEBUG) ## Build a and run the package with --debug
 
 test: $(TEST_BIN) runtest ## Build and run tests
 
-$(TEST_BIN): $(BUILD_DIR) $(PONY_SRC)
+$(TEST_BIN): $(BUILD_DIR) peg_src
 	$(PONYC) -o $(BUILD_DIR) --path . $(TEST_SRC)
 
 runtest: ## Run the tests
@@ -35,7 +36,7 @@ runtest: ## Run the tests
 
 bench: $(BENCH_BIN) runbench ## Build and run benchmarks
 
-$(BENCH_BIN): $(BUILD_DIR) $(PONY_SRC)
+$(BENCH_BIN): $(BUILD_DIR) peg_src
 	$(PONYC) -o $(BUILD_DIR) --path . $(BENCH_SRC)
 
 runbench: ## Run benchmarks
@@ -53,18 +54,20 @@ $(BIN): $(PONY_SRC)
 $(DEBUG_DIR):
 	mkdir -p $(DEBUG_DIR)
 
-$(DEBUG): $(PONY_SRC) 
+$(DEBUG): peg_src 
 	$(PONYC) --debug -o $(DEBUG_DIR) $(PKG)/example
 
-doc: $(PONY_SRC) ## Build the documentation 
+doc: peg_src ## Build the documentation 
 	$(PONYC) -o $(BUILD_DIR) --docs --path . --pass=docs $(PKG)
 
 clean: ## Remove all artifacts
 	-rm -rf $(BUILD_DIR)
-	# -rm -rf venv
 	-rm peg/parser.pony
 
-.PHONY: help
+clean_all: clean ## Remove all, even the python virtualenv
+	-rm -rf venv
+
+.PHONY: help clean clean_all
 
 help: ## Show help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -72,7 +75,7 @@ help: ## Show help
 peg_src: $(PONY_SRC) $(PARSER_SRC)
 
 venv:
-	virtualenv --python /usr/bin/python2 venv
+	virtualenv --python $(PYTHON2) venv
 	venv/bin/pip install fastidious
 
 $(PARSER_SRC): venv bootstrap.py ## bootstrap the the peg parser
@@ -86,7 +89,7 @@ $(GENERATOR_BIN): $(BIN_DIR) peg_src
 
 generator: $(GENERATOR_BIN)
 
-CALC_PEG=$(EXAMPLE_DIR)/calculator.ponypeg
+CALC_PEG=$(EXAMPLE_DIR)/calculator/calculator.ponypeg
 CALC_SRC_DIR=$(GENERATOR_OUTPUT_DIR)/calculator
 CALC_SRC=$(CALC_SRC_DIR)/main.pony
 CALC_BIN=$(BIN_DIR)/calculator
