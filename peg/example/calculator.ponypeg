@@ -5,11 +5,14 @@ use "peg"
 
 
 actor Main
+  // pony-peg boilerplate
   var _p_current_labeled: Map[String, ParseResult val] = Map[String, ParseResult val]
   var p_current_error: String = ""
-  let _env: Env
   let _sr: SourceReader
   var _debug_indent: String = ""
+
+  // User's attributes
+  let _env: Env
 
   new create(env: Env) =>
     _env=env
@@ -20,7 +23,6 @@ actor Main
     end
     Debug(src)
     _sr = SourceReader(src)
-    _debug_indent = ""
     try 
       let result = eval()
       env.out.print(result.string())
@@ -53,7 +55,6 @@ term <- first:factor rest:( _ mult_op _ factor )* {accumulate(first', rest')}
 expr "EXPRESSION" <- _ first:term rest:( _ add_op _ term  )* _ {accumulate(first', rest')}
 add_op "OPERATOR" <- "+" / "-" {}
 mult_op "OPERATOR" <- "*" / "/" {}
-close <- ")"
 factor "EXPRESSION" <- ( "(" fact:expr ")" ) / fact:integer {@fact}
 integer "INT"<- "-"? [0-9]+ {value'.flatten()}
 _ <- [ \n\t\r]* {value'.flatten()}
