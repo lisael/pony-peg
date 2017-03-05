@@ -11,6 +11,7 @@ actor Main
   // Some values we can set via command line options
   var _input: String = ""
   var _loglevel: LogLevel = Warn
+  var written: Set[String] = Set[String]
 
   new create(env: Env) =>
     _env = env
@@ -47,18 +48,18 @@ actor Main
 
       let writer = object
         let done: SetIs[Expression val] = SetIs[Expression val]
-        fun ref write(e: Expression val, env: Env) =>
-          if not done.contains(e) then
+        fun ref write(e: Expression val, env: Env, main: Main ref) =>
+          if not main.written.contains(e.pony_func_name()) then
             env.out.print(e.pony_method())
-            done.set(e)
+            main.written.set(e.pony_func_name())
             for expr in e.requires().values() do
-              write(expr, env)
+              write(expr, env, main)
             end
           end
       end
 
       for r in rules'.array().values() do
-        writer.write(r.array()(0).atom() as Expression val, _env)
+        writer.write(r.array()(0).atom() as Expression val, _env, this)
       end
     else
       try Fact(false, parser.p_current_error) end
