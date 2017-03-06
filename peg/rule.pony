@@ -2,11 +2,11 @@ use "collections"
 
 class Rule is Expression
   let _name: String
-  let _expr: Expression val
+  let _expr: Expression 
   let _code: String
   let _alias: String
 
-  new create(name: String, expr: Expression val, code: String, alias: String) =>
+  new create(name: String, expr: Expression, code: String, alias: String) =>
     _name = name
     _expr = expr
     _code = code
@@ -16,7 +16,6 @@ class Rule is Expression
     PonyFuncName(_name)
 
   fun pony_call_rule_code(): String =>
-    "// TODO: call rule code"
     let labels = _get_labels()
     var i = USize(0)
     var result = ""
@@ -25,6 +24,7 @@ class Rule is Expression
       result = result + 
       "      let p_label_" + idx.string() + " = try _p_current_labeled(\"" + p + "\")\n" +
       "        else\n" +
+      "          Debug(\"" + p +"\" + \" NOT FOUND\")\n" +
       "          ParseResult(None)\n" +
       "        end\n"
     end
@@ -38,9 +38,9 @@ class Rule is Expression
   fun pony_labels(): String =>
     var s = "value"
     for l in _get_labels().values() do
-      s = s + "': ParseResult val, " + l
+      s = s + "': ParseResult, " + l
     end
-    s = s + "': ParseResult val"
+    s = s + "': ParseResult"
     s
 
   fun _get_labels(): Set[String] =>
@@ -62,19 +62,17 @@ class Rule is Expression
       end
     end
 
-  fun requires(): Array[Expression val] val =>
-    recover val
-      let res = Array[Expression val]
-      res.push(_expr)
-      res
-    end
+  fun ref requires(): Array[Expression] =>
+    let res = Array[Expression]
+    res.push(_expr)
+    res
 
-  fun pony_grammar(): String =>
+  fun ref pony_grammar(): String =>
     _name + " <- " + _expr.pony_grammar()
 
-  fun pony_method(): String =>
+  fun ref pony_method(): String =>
     _pony_method() +
-    "    let p_old_labeled = _p_current_labeled = Map[String, ParseResult val]\n" +
+    "    let p_old_labeled = _p_current_labeled = Map[String, ParseResult]\n" +
     "    try\n"+
     "      var p_value = " + _expr.pony_func_name() + "()\n" +
     pony_call_rule_code() + "\n" +
@@ -87,7 +85,7 @@ class Rule is Expression
     "      error\n" +
     "    end\n\n" +
 
-    "  fun ref _on_" + pony_func_name() + """ (""" + pony_labels() + """): ParseResult val ? =>
+    "  fun ref _on_" + pony_func_name() + """ (""" + pony_labels() + """): ParseResult ? =>
     ifdef debug then
       Debug(_debug_indent + "_on_""" + pony_func_name() + """ `""" + PonyEscape(_code) + """`")
       Debug(_debug_indent + _sr.head())

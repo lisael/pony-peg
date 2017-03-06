@@ -2,42 +2,42 @@ use "collections"
 use "debug"
 
 interface Debugable
-  fun dbg(): String?
+  fun ref dbg(): String?
 
-type ParseAtom is ( String val
-                  | Array[ParseResult val] val
-                  | Debugable val
+type ParseAtom is ( String
+                  | Array[ParseResult]
+                  | Debugable
                   | None)
 
 
 class ParseResult
   let _atom: ParseAtom
 
-  new val create(atom': (ParseAtom | ParseResult val)) =>
+  new create(atom': (ParseAtom | ParseResult)) =>
     match atom'
     | let a: ParseAtom => _atom = a
-    | let r: ParseResult val => _atom = r.atom()
+    | let r: ParseResult => _atom = r.atom()
     else
       _atom = ""
     end
 
-  fun string(): String val? =>
-    _atom as String val
+  fun string(): String? =>
+    _atom as String 
 
-  fun atom(): ParseAtom =>
+  fun ref atom(): ParseAtom =>
     _atom
 
-  fun array(): Array[ParseResult val] val? =>
-    _atom as Array[ParseResult val] val
+  fun ref array(): Array[ParseResult]? =>
+    _atom as Array[ParseResult] 
 
   fun none(): None? =>
     _atom as None
 
-  fun val flatten(): ParseResult val ? =>
+  fun ref flatten(): ParseResult ? =>
     match _atom
-    | let s: String val => this
+    | let s: String => this
     | None => ParseResult("")
-    | let arr: Array[ParseResult val] val =>
+    | let arr: Array[ParseResult] =>
       var result = ""
       for r in arr.values() do
         result = result.add(r.flatten().string())
@@ -48,17 +48,17 @@ class ParseResult
       error
     end
 
-  fun dbg(): String? =>
+  fun ref dbg(): String? =>
     match _atom
-    | let s: String val => "\"" + s + "\""
+    | let s: String => "\"" + s + "\""
     | None => "None"
-    | let arr: Array[ParseResult val] val =>
+    | let arr: Array[ParseResult] =>
       var result = "["
       for r in arr.values() do
         result = result + r.dbg() + ", "
       end
       result + "]"
-    | let d: Debugable val => d.dbg()
+    | let d: Debugable => d.dbg()
     else
       error
     end

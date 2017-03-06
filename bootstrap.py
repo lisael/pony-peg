@@ -290,8 +290,8 @@ class Rule:
         return self._labels
 
     def pony_labels(self):
-        return ", ".join(["value': ParseResult val"] +
-            ["%s': ParseResult val" % l for l in set(self.find_labels(self.expr))])
+        return ", ".join(["value': ParseResult"] +
+            ["%s': ParseResult" % l for l in set(self.find_labels(self.expr))])
 
     def pony_action_fun_name(self):
         return "_on_%s" % ponyfy_funname(self.name)
@@ -327,14 +327,14 @@ class Rule:
 
     def __str__(self):
         return """
-  fun ref {0}(): ParseResult val ? =>
+  fun ref {0}(): ParseResult ? =>
     // {6}
     ifdef debug then
       _debug_indent = _debug_indent + " "
       Debug(_debug_indent + "{0} `{6}`")
       Debug(_debug_indent + _sr.head())
     end
-    let p_old_labeled = _p_current_labeled = Map[String, ParseResult val]
+    let p_old_labeled = _p_current_labeled = Map[String, ParseResult]
     try
       var p_value = {1}()
       {5}
@@ -351,7 +351,7 @@ class Rule:
       error
     end
 
-  fun ref _on_{0}({3}): ParseResult val ? =>
+  fun ref _on_{0}({3}): ParseResult ? =>
     ifdef debug then
       Debug(_debug_indent + "_on_{0}")
       Debug(_debug_indent + _sr.head())
@@ -414,20 +414,18 @@ class SeqExpr(Expression):
         return " ".join([c.grammar() for c in self._children])
 
     def pony_call_children(self):
-        return "\n        ".join(["p_results.push({}())".format(c.name)
+        return "\n      ".join(["p_results.push({}())".format(c.name)
                                   for c in self._children])
 
     def __str__(self):
         return """
-  fun ref {0}(): ParseResult val ? =>
+  fun ref {0}(): ParseResult ? =>
     // {2}
     {3}
     try
-      let p_result = ParseResult(recover val
-        let p_results = Array[ParseResult val]
-        {1}
-        p_results
-      end)
+      let p_results = Array[ParseResult]
+      {1}
+      let p_result = ParseResult(p_results)
       {4}
       p_result
     else
@@ -460,7 +458,7 @@ class ChoiceExpr(Expression):
 
     def __str__(self):
         return """
-  fun ref {0}(): ParseResult val ? =>
+  fun ref {0}(): ParseResult ? =>
     // {3}
     {4}
     let p_sp = _sr.save()
@@ -508,7 +506,7 @@ class RuleExpr(Expression):
 
     def __str__(self):
         return """
-  fun ref {0}(): ParseResult val ? =>
+  fun ref {0}(): ParseResult ? =>
     // {2}
     {3}
     try
@@ -545,7 +543,7 @@ class LiteralExpr(Expression):
 
     def __str__(self):
         return """
-  fun ref {0}(): ParseResult val ? =>
+  fun ref {0}(): ParseResult ? =>
     // {2}
     {3}
     if _sr.startswith("{1}", true) then
@@ -582,7 +580,7 @@ class LabeledExpr(Expression):
 
     def __str__(self):
         return """
-  fun ref {0}(): ParseResult val ? =>
+  fun ref {0}(): ParseResult ? =>
     // {3}
     {4}
     try
@@ -625,12 +623,11 @@ class OneOrMoreExpr(Expression):
 
     def __str__(self):
        return """
-  fun ref {0}(): ParseResult val ? =>
+  fun ref {0}(): ParseResult ? =>
     // {2}
     {3}
     try
-      let p_result = ParseResult(recover val
-      let p_results = Array[ParseResult val]
+      let p_results = Array[ParseResult]
       p_results.push({1}())
       while true do
         try
@@ -639,8 +636,7 @@ class OneOrMoreExpr(Expression):
           break
         end
       end
-      p_results
-      end)
+      let p_result = ParseResult(p_results)
       {4}
       p_result
     else
@@ -675,7 +671,7 @@ class MaybeExpr(Expression):
 
     def __str__(self):
         return """
-  fun ref {0}(): ParseResult val ? =>
+  fun ref {0}(): ParseResult ? =>
     // {2}
     {3}
     // the method has to raise. It won't. Ever.
@@ -719,7 +715,7 @@ class NotExpr(Expression):
 
     def __str__(self):
         return """
-  fun ref {0}(): ParseResult val ? =>
+  fun ref {0}(): ParseResult ? =>
     // {2}
     {3}
     let sp = _sr.save()
@@ -762,17 +758,15 @@ class ZeroOrMoreExpr(Expression):
 
     def __str__(self):
         return """
-  fun ref {0}(): ParseResult val ? =>
+  fun ref {0}(): ParseResult ? =>
     // {2}
     {3}
     if true then
-      let p_result = ParseResult(recover val
-        let results = Array[ParseResult val]
-        while true do
-          try results.push({1}()) else break end
-        end
-        results
-      end)
+      let p_results = Array[ParseResult]
+      while true do
+        try p_results.push({1}()) else break end
+      end
+      let p_result = ParseResult(p_results)
       {4}
       p_result
     else
@@ -806,7 +800,7 @@ class CharRangeExpr(Expression):
 
     def __str__(self):
         return """
-  fun ref {0}(): ParseResult val ? =>
+  fun ref {0}(): ParseResult ? =>
     // {2}
     {3}
     let uchar = _sr.peak()
@@ -844,7 +838,7 @@ class AnyCharExpr(Expression):
 
     def __str__(self):
         return """
-  fun ref {0}(): ParseResult val ? =>
+  fun ref {0}(): ParseResult ? =>
     // {1}
     {2}
     try
@@ -933,7 +927,7 @@ use "debug"
 
 
 class PegParser
-  var _p_current_labeled: Map[String, ParseResult val] = Map[String, ParseResult val]
+  var _p_current_labeled: Map[String, ParseResult] = Map[String, ParseResult]
   var p_current_error: String = ""
   let _env: Env
   let _sr: SourceReader
@@ -950,14 +944,13 @@ class PegParser
 }
 
 grammar <- intro:code_block __ rules:( rule __ )+ outro:(code_block __)? {
-    if true then ParseResult(recover val [intro', rules', outro'] end) else error end
+    if true then ParseResult([intro', rules', outro']) else error end
 }
 
-
 rule "RULE" <- name:identifier_name __  ( :alias _ )? "<-" __ expr:expression code:( __ code_block )? EOS {
-    ParseResult(recover val
-        Rule(name'.string(), expr'.atom() as Expression val, try code'.array()(1).string() else "" end, try alias'.string() else "" end)
-    end)
+    ParseResult(
+        Rule(name'.string(), expr'.atom() as Expression, try code'.array()(1).string() else "" end, try alias'.string() else "" end)
+    )
 }
 
 code_block "CODE_BLOCK" <- "{" :code "}" {@code}
@@ -972,13 +965,13 @@ choice_expr <- first:seq_expr rest:( __ "/" __ choice_expr )? {
     match rest'.atom()
     | None => first'
     else
-      ParseResult(recover val
+      ParseResult(
         ChoiceExpr(
-          first'.atom() as Expression val,
-          rest'.array()(3).atom() as Expression val,
+          first'.atom() as Expression,
+          rest'.array()(3).atom() as Expression,
           _p_get_rank()
         )
-      end)
+      )
     end
 }
 primary_expr <- regexp_expr / lit_expr / char_range_expr / any_char_expr / sub_expr / rule_expr
@@ -987,13 +980,13 @@ sub_expr <- "(" __ expr:expression __ ")" {@expr}
 regexp_expr <- "~" lit:string_literal flags:[iLmsux]*
 
 lit_expr <- lit:string_literal ignore:"i"? {
-    ParseResult(recover val
+    ParseResult(
       LiteralExpr(
         lit'.string(),
         try ignore'.none(); false else true end,
         _p_get_rank()
       )
-    end)
+    )
 }
 
 string_literal <- '"' content:double_string_char* '"' {content'.flatten()}
@@ -1012,13 +1005,13 @@ seq_expr <- first:labeled_expr rest:( __ seq_expr )?{
     match rest'.atom()
     | None => first'
     else
-      ParseResult(recover val
+      ParseResult(
         SeqExpr(
-          first'.atom() as Expression val,
-          rest'.array()(1).atom() as Expression val,
+          first'.atom() as Expression,
+          rest'.array()(1).atom() as Expression,
           _p_get_rank()
         )
-      end)
+      )
     end
 }
 
@@ -1040,7 +1033,7 @@ labeled_expr <- label:( identifier? __ ":" __ )? expr:prefixed_expr {
     else
       error
     end
-    ParseResult(LabeledExpr(p_label, expr'.atom() as Expression val, _p_get_rank()))  
+    ParseResult(LabeledExpr(p_label, expr'.atom() as Expression, _p_get_rank()))  
 }
 
 prefixed_expr <- prefix:( prefix __ )? expr:suffixed_expr{
@@ -1049,11 +1042,12 @@ prefixed_expr <- prefix:( prefix __ )? expr:suffixed_expr{
     return expr'
   end
   match prefix'.array()(0).string()
-  | "!" => ParseResult(recover val
-    NotExpr(
-      expr'.atom() as Expression val,
-      _p_get_rank()
-    ) end)
+  | "!" => ParseResult(
+      NotExpr(
+        expr'.atom() as Expression,
+        _p_get_rank()
+      )
+    )
   // TODO: implement LookAhead...
   else
     error
@@ -1067,21 +1061,21 @@ suffixed_expr <- expr:primary_expr suffix:( __ suffix )?{
     end
     let suf = suffix'.array()(1).string()
     match suf
-    | "*" => ParseResult(recover val
+    | "*" => ParseResult(
       ZeroOrMoreExpr(
-        expr'.atom() as Expression val,
+        expr'.atom() as Expression,
         _p_get_rank()
-      ) end) 
-    | "?" => ParseResult(recover val
+      )) 
+    | "?" => ParseResult(
       MaybeExpr(
-        expr'.atom() as Expression val,
+        expr'.atom() as Expression,
         _p_get_rank()
-      ) end) 
-    | "+" => ParseResult(recover val
+      )) 
+    | "+" => ParseResult(
       OneOrMoreExpr(
-        expr'.atom() as Expression val,
+        expr'.atom() as Expression,
         _p_get_rank()
-      ) end)
+      ))
     else
       error
     end

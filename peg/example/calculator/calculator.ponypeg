@@ -6,7 +6,7 @@ use "peg"
 
 actor Main
   // pony-peg boilerplate
-  var _p_current_labeled: Map[String, ParseResult val] = Map[String, ParseResult val]
+  var _p_current_labeled: Map[String, ParseResult] = Map[String, ParseResult]
   var p_current_error: String = ""
   let _sr: SourceReader
   var _debug_indent: String = ""
@@ -30,7 +30,7 @@ actor Main
       _env.out.print("Can't parse input")
     end
 
-  fun accumulate(first': ParseResult val, rest': ParseResult val): ParseResult val? =>
+  fun accumulate(first': ParseResult, rest': ParseResult): ParseResult ref? =>
     if rest'.flatten().string() == "" then
       return first'.flatten()
     end

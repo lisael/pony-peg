@@ -47,8 +47,8 @@ actor Main
       end
 
       let writer = object
-        let done: SetIs[Expression val] = SetIs[Expression val]
-        fun ref write(e: Expression val, env: Env, main: Main ref) =>
+        let done: SetIs[Expression] = SetIs[Expression]
+        fun ref write(e: Expression, env: Env, main: Main ref) =>
           if not main.written.contains(e.pony_func_name()) then
             env.out.print(e.pony_method())
             main.written.set(e.pony_func_name())
@@ -59,7 +59,7 @@ actor Main
       end
 
       for r in rules'.array().values() do
-        writer.write(r.array()(0).atom() as Expression val, _env, this)
+        writer.write(r.array()(0).atom() as Expression, _env, this)
       end
     else
       try Fact(false, parser.p_current_error) end
